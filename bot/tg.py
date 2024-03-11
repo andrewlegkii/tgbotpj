@@ -4,10 +4,19 @@ import telebot
 from telebot import types
 import requests
 import json
+import sqlite3
+
 
 load_dotenv()
 
 bot = telebot.TeleBot(os.getenv('TELEGRAM_BOT_TOKEN'))
+
+def save_request(user_id, user_text, bot_text):
+    conn = sqlite3.connect('example.db')
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO user_requests (user_id, user_text, bot_text) VALUES (?, ?, ?)", (user_id, user_text, bot_text))
+    conn.commit()
+    conn.close()
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -28,6 +37,8 @@ def show_info(message):
 @bot.message_handler(func=lambda message: True)
 def echo(message):
     user_message = message.text
+
+    bot.send_chat_action(message.chat.id, 'typing')
 
     prompt = {
         "modelUri": os.getenv('MODEL_URI'),
@@ -63,6 +74,7 @@ def echo(message):
 
         if bot_response:
             bot.send_message(message.chat.id, bot_response)
+            save_request(message.chat.id, user_message, bot_response)
         else:
             bot.send_message(message.chat.id, 'Пустой ответ от API Яндекс.ДжПТ')
     except (requests.RequestException, json.JSONDecodeError) as e:

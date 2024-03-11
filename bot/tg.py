@@ -1,21 +1,30 @@
 import os
 from dotenv import load_dotenv
 import telebot
+from telebot import types
 import requests
 import json
 
-# Загрузка переменных окружения из файла .env
 load_dotenv()
 
-# Создание экземпляра бота с использованием токена из переменных окружения
 bot = telebot.TeleBot(os.getenv('TELEGRAM_BOT_TOKEN'))
 
-# Функция для обработки команды /start
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "Привет! Я бот.")
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    itembtn1 = types.KeyboardButton('Задать вопрос')
+    itembtn2 = types.KeyboardButton('Информация')
+    markup.add(itembtn1, itembtn2)
+    bot.send_message(message.chat.id, "Привет! Я ваш юридический помощник. Задавайте мне вопросы, и я постараюсь помочь вам.", reply_markup=markup)
 
-# Функция для обработки сообщений от пользователя
+@bot.message_handler(func=lambda message: message.text == "Задать вопрос")
+def ask_question(message):
+    bot.send_message(message.chat.id, "Вы можете задать свой вопрос здесь:")
+
+@bot.message_handler(func=lambda message: message.text == "Информация")
+def show_info(message):
+    bot.send_message(message.chat.id, "Мои создатели: @anzhelika_frolova7 и @dayze")
+
 @bot.message_handler(func=lambda message: True)
 def echo(message):
     user_message = message.text
@@ -47,7 +56,7 @@ def echo(message):
 
     try:
         response = requests.post(url, headers=headers, json=prompt)
-        response.raise_for_status()  # Проверяем статус код ответа
+        response.raise_for_status()
 
         result = response.json()
         bot_response = result.get('result', {}).get('alternatives', [{}])[0].get('message', {}).get('text')
@@ -59,6 +68,5 @@ def echo(message):
     except (requests.RequestException, json.JSONDecodeError) as e:
         bot.send_message(message.chat.id, f'Ошибка при запросе к API: {str(e)}')
 
-# Запуск бота
 if __name__ == '__main__':
     bot.polling()

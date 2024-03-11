@@ -23,7 +23,7 @@ def ask_question(message):
 
 @bot.message_handler(func=lambda message: message.text == "Информация")
 def show_info(message):
-    bot.send_message(message.chat.id, "Мои создатели: @anzhelika_frolova7 и @dayze")
+    bot.send_message(message.chat.id, "Мои создатели: @anzhelika_frolova7 и @dayze. Новостной канал - t.me/legalassistantranepa")
 
 @bot.message_handler(func=lambda message: True)
 def echo(message):

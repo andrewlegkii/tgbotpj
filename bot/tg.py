@@ -21,7 +21,7 @@ def echo(message):
     user_message = message.text
 
     prompt = {
-        "modelUri": "gpt://b1gevpns458a0bh39eo3/yandexgpt-lite",
+        "modelUri": os.getenv('MODEL_URI'),
         "completionOptions": {
             "stream": False,
             "temperature": 0.6,

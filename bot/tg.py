@@ -6,7 +6,6 @@ import requests
 import json
 import sqlite3
 
-
 load_dotenv()
 
 bot = telebot.TeleBot(os.getenv('TELEGRAM_BOT_TOKEN'))
@@ -18,6 +17,14 @@ def save_request(user_id, user_text, bot_text):
     conn.commit()
     conn.close()
 
+def view_data():
+    conn = sqlite3.connect('example.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM user_requests")
+    data = cursor.fetchall()
+    conn.close()
+    return data
+
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(row_width=2)
@@ -25,6 +32,14 @@ def start(message):
     itembtn2 = types.KeyboardButton('Информация')
     markup.add(itembtn1, itembtn2)
     bot.send_message(message.chat.id, "Привет! Я ваш юридический помощник. Задавайте мне вопросы, и я постараюсь помочь вам.", reply_markup=markup)
+
+@bot.message_handler(commands=['data'])
+def data_handler(message):
+    if message.text.strip() == f'/data {os.getenv("ADMIN_PASSWORD")}':
+        data = view_data()
+        bot.send_message(message.chat.id, str(data))
+    else:
+        bot.send_message(message.chat.id, "Неверный пароль")
 
 @bot.message_handler(func=lambda message: message.text == "Задать вопрос")
 def ask_question(message):

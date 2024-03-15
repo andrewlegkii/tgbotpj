@@ -26,6 +26,17 @@ def view_data():
     conn.close()
     return data
 
+def create_text_db():
+    conn = sqlite3.connect('example.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM user_requests")
+    data = cursor.fetchall()
+    conn.close()
+    
+    with open('database.txt', 'w') as f:
+        for row in data:
+            f.write(str(row) + '\n')
+
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(row_width=2)
@@ -34,11 +45,20 @@ def start(message):
     markup.add(itembtn1, itembtn2)
     bot.send_message(message.chat.id, "Привет! Я ваш юридический помощник. Задавайте мне вопросы, и я постараюсь помочь вам.", reply_markup=markup)
 
-@bot.message_handler(commands=['data'])
-def data_handler(message):
-    if message.text.strip() == f'/data {os.getenv("ADMIN_PASSWORD")}':
-        data = view_data()
-        bot.send_message(message.chat.id, str(data))
+# @bot.message_handler(commands=['data'])
+# def data_handler(message):
+#    if message.text.strip() == f'/data {os.getenv("ADMIN_PASSWORD")}':
+#        data = view_data()
+#        bot.send_message(message.chat.id, str(data))
+#    else:
+#        bot.send_message(message.chat.id, "Неверный пароль")
+
+@bot.message_handler(commands=['base'])
+def base_handler(message):
+    if message.text.strip() == f'/base {os.getenv("ADMIN_PASSWORD")}':
+        create_text_db()
+        with open('database.txt', 'rb') as f:
+            bot.send_document(message.chat.id, f)
     else:
         bot.send_message(message.chat.id, "Неверный пароль")
 

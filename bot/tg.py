@@ -29,6 +29,7 @@ def view_data():
 def create_text_db():
     conn = sqlite3.connect('example.db')
     cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS user_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, user_text TEXT, bot_text TEXT)")
     cursor.execute("SELECT * FROM user_requests")
     data = cursor.fetchall()
     conn.close()

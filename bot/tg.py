@@ -58,8 +58,8 @@ def start(message):
 def base_handler(message):
     if message.text.strip() == f'/base {os.getenv("ADMIN_PASSWORD")}':
         create_text_db()
-        with open('database.txt', 'rb') as f:
-            bot.send_document(message.chat.id, f)
+        with open('database.txt', 'r') as f:  # Открываем файл на чтение в текстовом режиме
+            bot.send_document(message.chat.id, f)  # Передаем содержимое файла, а не сам файл
     else:
         bot.send_message(message.chat.id, "Неверный пароль")
 

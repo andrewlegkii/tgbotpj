@@ -46,20 +46,12 @@ def start(message):
     markup.add(itembtn1, itembtn2)
     bot.send_message(message.chat.id, "Привет! Я ваш юридический помощник. Задавайте мне вопросы, и я постараюсь помочь вам.", reply_markup=markup)
 
-# @bot.message_handler(commands=['data'])
-# def data_handler(message):
-#    if message.text.strip() == f'/data {os.getenv("ADMIN_PASSWORD")}':
-#        data = view_data()
-#        bot.send_message(message.chat.id, str(data))
-#    else:
-#        bot.send_message(message.chat.id, "Неверный пароль")
-
 @bot.message_handler(commands=['base'])
 def base_handler(message):
     if message.text.strip() == f'/base {os.getenv("ADMIN_PASSWORD")}':
         create_text_db()
-        with open('database.txt', 'r') as f:  # Открываем файл на чтение в текстовом режиме
-            bot.send_document(message.chat.id, f)  # Передаем содержимое файла, а не сам файл
+        with open('database.txt', 'r') as f:
+            bot.send_document(message.chat.id, f)
     else:
         bot.send_message(message.chat.id, "Неверный пароль")
 

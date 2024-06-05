@@ -4,7 +4,6 @@ import requests
 import json
 import sqlite3
 from bs4 import BeautifulSoup
-
 from telebot import types
 from dotenv import load_dotenv
 
@@ -149,6 +148,8 @@ def analyze_link(message):
         else:
             bot.send_message(message.chat.id, 'Пустой ответ от API Яндекс.ДжПТ')
 
+    except requests.exceptions.ProxyError:
+        bot.send_message(message.chat.id, 'Ошибка при анализе ссылки: Доступ к этому сайту ограничен через прокси-сервер.')
     except (requests.RequestException, json.JSONDecodeError, Exception) as e:
         bot.send_message(message.chat.id, f'Ошибка при анализе ссылки: {str(e)}')
 

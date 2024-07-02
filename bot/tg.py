@@ -47,7 +47,8 @@ def start(message):
     itembtn2 = types.KeyboardButton('Информация')
     itembtn3 = types.KeyboardButton('Помощь')
     itembtn4 = types.KeyboardButton('Анализировать ссылку')
-    markup.add(itembtn1, itembtn2, itembtn3, itembtn4)
+    itembtn5 = types.KeyboardButton('Посетить сайт')
+    markup.add(itembtn1, itembtn2, itembtn3, itembtn4, itembtn5)
     bot.send_message(message.chat.id, "Привет! Я ваш юридический помощник. Задавайте мне вопросы, и я постараюсь помочь вам.", reply_markup=markup)
 
 @bot.message_handler(commands=['base'])
@@ -152,6 +153,14 @@ def analyze_link(message):
         bot.send_message(message.chat.id, 'Ошибка при анализе ссылки: Доступ к этому сайту ограничен через прокси-сервер.')
     except (requests.RequestException, json.JSONDecodeError, Exception) as e:
         bot.send_message(message.chat.id, f'Ошибка при анализе ссылки: {str(e)}')
+
+@bot.message_handler(func=lambda message: message.text == "Посетить сайт")
+def visit_site(message):
+    site_url = "https://legalassistantranepa.ru/"
+    markup = types.InlineKeyboardMarkup()
+    btn = types.InlineKeyboardButton(text="Перейти на сайт", url=site_url)
+    markup.add(btn)
+    bot.send_message(message.chat.id, "Нажмите кнопку ниже, чтобы посетить сайт:", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: True)
 def echo(message):

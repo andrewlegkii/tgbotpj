@@ -6,12 +6,28 @@ import sqlite3
 from bs4 import BeautifulSoup
 from telebot import types
 from dotenv import load_dotenv
+from time import sleep
 
 load_dotenv()
 
 bot = telebot.TeleBot(os.getenv('TELEGRAM_BOT_TOKEN'))
-
 ADMIN_CHAT_ID = int(os.getenv('ADMIN_CHAT_ID'))
+YANDEX_API_KEY = os.getenv('YANDEX_API_KEY')
+MODEL_URI = os.getenv('MODEL_URI')
+
+def init_db():
+    conn = sqlite3.connect('example.db')
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            user_text TEXT,
+            bot_text TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 def save_request(user_id, user_text, bot_text):
     conn = sqlite3.connect('example.db')
@@ -29,13 +45,7 @@ def view_data():
     return data
 
 def create_text_db():
-    conn = sqlite3.connect('example.db')
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS user_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, user_text TEXT, bot_text TEXT)")
-    cursor.execute("SELECT * FROM user_requests")
-    data = cursor.fetchall()
-    conn.close()
-    
+    data = view_data()
     with open('database.txt', 'w') as f:
         for row in data:
             f.write(str(row) + '\n')
@@ -114,7 +124,7 @@ def analyze_link(message):
         text = soup.get_text()
 
         prompt = {
-            "modelUri": os.getenv('MODEL_URI'),
+            "modelUri": MODEL_URI,
             "completionOptions": {
                 "stream": False,
                 "temperature": 0.6,
@@ -135,7 +145,7 @@ def analyze_link(message):
         api_url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Api-Key {os.getenv('YANDEX_API_KEY')}"
+            "Authorization": f"Api-Key {YANDEX_API_KEY}"
         }
 
         response = requests.post(api_url, headers=headers, json=prompt)
@@ -169,7 +179,7 @@ def echo(message):
     bot.send_chat_action(message.chat.id, 'typing')
 
     prompt = {
-        "modelUri": os.getenv('MODEL_URI'),
+        "modelUri": MODEL_URI,
         "completionOptions": {
             "stream": False,
             "temperature": 0.6,
@@ -190,7 +200,7 @@ def echo(message):
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Api-Key {os.getenv('YANDEX_API_KEY')}"
+        "Authorization": f"Api-Key {YANDEX_API_KEY}"
     }
 
     try:
@@ -209,4 +219,10 @@ def echo(message):
         bot.send_message(message.chat.id, f'Ошибка при запросе к API: {str(e)}')
 
 if __name__ == '__main__':
-    bot.polling()
+    init_db()
+    while True:
+        try:
+            bot.polling(none_stop=True, interval=0, timeout=20)
+        except Exception as e:
+            print(f"Ошибка: {e}")
+            sleep(15)

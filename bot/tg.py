@@ -44,14 +44,68 @@ def view_data():
     conn.close()
     return data
 
-def create_text_db():
+def create_requests_db():
     data = view_data()
+    
+    if not data:
+        return
+    
     with open('database.txt', 'w') as f:
         for row in data:
             f.write(str(row) + '\n')
 
+def add_to_blocklist(user_id):
+    with open('blocks.txt', 'a') as f:
+        f.write(str(user_id) + '\n')
+
+def remove_from_blocklist(user_id):
+    if os.path.exists('blocks.txt'):
+        with open('blocks.txt', 'r') as f:
+            lines = f.readlines()
+        with open('blocks.txt', 'w') as f:
+            for line in lines:
+                if line.strip() != str(user_id):
+                    f.write(line)
+
+def is_blacklisted(user_id):
+    if not os.path.exists('blocks.txt'):
+        return False
+    
+    with open('blocks.txt', 'r') as f:
+        return str(user_id) in [line.strip() for line in f]
+
+@bot.message_handler(commands=['block'])
+def block_user(message):
+    if message.chat.id != ADMIN_CHAT_ID:
+        bot.send_message(message.chat.id, "Команда /block доступна только для администратора.")
+        return
+
+    try:
+        user_id = int(message.text.split()[1])
+        add_to_blocklist(user_id)
+        bot.send_message(message.chat.id, f"Пользователь {user_id} заблокирован.")
+    except (IndexError, ValueError):
+        bot.send_message(message.chat.id, "Использование: /block <user_id>")
+
+@bot.message_handler(commands=['unblock'])
+def unblock_user(message):
+    if message.chat.id != ADMIN_CHAT_ID:
+        bot.send_message(message.chat.id, "Команда /unblock доступна только для администратора.")
+        return
+
+    try:
+        user_id = int(message.text.split()[1])
+        remove_from_blocklist(user_id)
+        bot.send_message(message.chat.id, f"Пользователь {user_id} разблокирован.")
+    except (IndexError, ValueError):
+        bot.send_message(message.chat.id, "Использование: /unblock <user_id>")
+
 @bot.message_handler(commands=['start'])
 def start(message):
+    if is_blacklisted(message.chat.id):
+        bot.send_message(message.chat.id, "Вы заблокированы администрацией.")
+        return
+
     markup = types.ReplyKeyboardMarkup(row_width=2)
     itembtn1 = types.KeyboardButton('Задать вопрос')
     itembtn2 = types.KeyboardButton('Информация')
@@ -64,22 +118,42 @@ def start(message):
 @bot.message_handler(commands=['base'])
 def base_handler(message):
     if message.text.strip() == f'/base {os.getenv("ADMIN_PASSWORD")}':
-        create_text_db()
-        with open('database.txt', 'r') as f:
-            bot.send_document(message.chat.id, f)
+        data = view_data()
+        
+        if not data:
+            bot.send_message(message.chat.id, "Нет данных для отображения.")
+            return
+        
+        create_requests_db()
+        
+        file_path = 'database.txt'
+        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+            with open(file_path, 'rb') as f:
+                bot.send_document(message.chat.id, f)
+        else:
+            bot.send_message(message.chat.id, "Файл пустой или не был создан.")
     else:
         bot.send_message(message.chat.id, "Неверный пароль")
 
 @bot.message_handler(func=lambda message: message.text == "Задать вопрос")
 def ask_question(message):
+    if is_blacklisted(message.chat.id):
+        bot.send_message(message.chat.id, "Вы заблокированы администрацией.")
+        return
     bot.send_message(message.chat.id, "Вы можете задать свой вопрос здесь:")
 
 @bot.message_handler(func=lambda message: message.text == "Информация")
 def show_info(message):
+    if is_blacklisted(message.chat.id):
+        bot.send_message(message.chat.id, "Вы заблокированы администрацией.")
+        return
     bot.send_message(message.chat.id, "Мои создатели: @anzhelika_frolova7 и @dayze. Новостной канал - t.me/legalassistantranepa")
 
 @bot.message_handler(func=lambda message: message.text == "Помощь")
 def help_request(message):
+    if is_blacklisted(message.chat.id):
+        bot.send_message(message.chat.id, "Вы заблокированы администрацией.")
+        return
     msg = bot.send_message(message.chat.id, "Пожалуйста, напишите ваше сообщение для разработчика:")
     bot.register_next_step_handler(msg, forward_to_admin)
 
@@ -111,6 +185,9 @@ def reply_to_user(message):
 
 @bot.message_handler(func=lambda message: message.text == "Анализировать ссылку")
 def analyze_link_request(message):
+    if is_blacklisted(message.chat.id):
+        bot.send_message(message.chat.id, "Вы заблокированы администрацией.")
+        return
     msg = bot.send_message(message.chat.id, "Пожалуйста, отправьте ссылку, которую вы хотите проанализировать:")
     bot.register_next_step_handler(msg, analyze_link)
 
@@ -166,6 +243,9 @@ def analyze_link(message):
 
 @bot.message_handler(func=lambda message: message.text == "Посетить сайт")
 def visit_site(message):
+    if is_blacklisted(message.chat.id):
+        bot.send_message(message.chat.id, "Вы заблокированы администрацией.")
+        return
     site_url = "https://legalassistantranepa.ru/"
     markup = types.InlineKeyboardMarkup()
     btn = types.InlineKeyboardButton(text="Перейти на сайт", url=site_url)
@@ -174,6 +254,10 @@ def visit_site(message):
 
 @bot.message_handler(func=lambda message: True)
 def echo(message):
+    if is_blacklisted(message.chat.id):
+        bot.send_message(message.chat.id, "Вы заблокированы администрацией.")
+        return
+
     user_message = message.text
 
     bot.send_chat_action(message.chat.id, 'typing')

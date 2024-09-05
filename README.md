@@ -22,7 +22,7 @@
 2. Создайте файл `.env` и добавьте в него следующие переменные среды:
    - `TELEGRAM_BOT_TOKEN` - токен вашего Telegram бота.
    - `MODEL_URI` - URI модели генерации текста от Yandex.
-   - `YANDEX_API_KEY` - API-ключ для доступа к Yandex.DJPT.
+   - `YANDEX_API_KEY` - API-ключ для доступа к Yandex.GPT.
    - `ADMIN_PASSWORD` - пароль администратора для просмотра данных пользователей.
 3. Запустите бота, выполнив команду `python tg.py`.
 
